@@ -50,7 +50,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                   padding: EdgeInsets.symmetric(vertical: 8),
                   children: [
                     Text(
-                      Note as String,
+                      notes.title,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
