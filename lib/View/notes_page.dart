@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:noteapplication/Model/notes_db.dart';
 import 'package:noteapplication/Model/Model.dart';
+import 'package:noteapplication/View/AddEditNotePage.dart';
 import 'package:noteapplication/View/note_detail_page.dart';
+import 'package:noteapplication/Widget/note_card_widget.dart';
 
 class NotesPage extends StatefulWidget {
   const NotesPage({super.key});
@@ -21,6 +23,11 @@ class _NotesPageState extends State<NotesPage> {
     refreshnotes();
   }
 
+  void dispose() {
+    NotesDatabase.instance.close();
+    super.dispose();
+  }
+
   Future refreshnotes() async {
     setState(() {
       isloading = true;
@@ -31,24 +38,28 @@ class _NotesPageState extends State<NotesPage> {
     });
   }
 
-  void dispose() {
-    NotesDatabase.instance.close();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: Text("Notes",style: TextStyle(fontSize: 24,fontWeight: FontWeight.w500),)),
-    body: Center(
-      child: isloading ? CircularProgressIndicator()
-      :notes.isEmpty
-      ?Text("no notes",style: TextStyle(color: Colors.white)):cardview()
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Notes", style: TextStyle(fontSize: 24)),
+        actions: [Icon(Icons.search), SizedBox(width: 12)],
+      ),
+      body: Center(
+        child:
+            isloading
+                ? CircularProgressIndicator()
+                : notes.isEmpty
+                ? Text("no notes", style: TextStyle(color: Colors.white))
+                : cardview(),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.black,
         child: Icon(Icons.add),
-        onPressed: ()async {
-          // await navigator.of(context).push(MaterialPageRoute(builder:(context)=>))
+        onPressed: () async {
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (context) => AddEditNotePage()));
           refreshnotes();
         },
       ),
@@ -72,11 +83,11 @@ class _NotesPageState extends State<NotesPage> {
           );
           refreshnotes();
         },
-        child: Notecardview(note: note), // NoteCard senin liste elemanı widget'ın olmalı
+        child: NoteCardWidget(
+          note: note,
+          index: note.id!,
+        ),
       );
     },
   );
-
-
-  
 }
