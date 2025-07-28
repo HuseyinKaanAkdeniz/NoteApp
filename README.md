@@ -66,9 +66,8 @@ After launching the app, you can quickly add, delete, or edit your notes from th
 ## Roadmap
 
 - [x] Basic note-taking functionality
-- [ ] Categorize notes
 - [ ] Add images to notes
-- [ ] Cross-platform synchronization
+- [ ] Daily notifications
 - [ ] Dark mode support
 
 ---
