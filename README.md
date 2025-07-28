@@ -32,9 +32,6 @@ A simple and fast sticky notes application to keep your thoughts organized!
 
 ## Screenshots
 
-![Home Screen](screenshots/main_screen.png)
-![Add Note](screenshots/add_note.png)
-
 ---
 
 ## Installation
