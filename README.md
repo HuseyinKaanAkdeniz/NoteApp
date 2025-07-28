@@ -84,13 +84,7 @@ Contributions are welcome! Please open an issue to discuss your ideas before sub
 
 ---
 
-## License
-
-[MIT](LICENSE)
-
----
-
 ## Contact
 
-For more information: [kaanakdeniz@gmail.com](mailto:kaanakdeniz@gmail.com)  
+For more information: [simolexbusinnes@gmail.com](mailto:simolexbusinnes@gmail.com)  
 Development insights: [My Medium Profile](https://medium.com/@kaanakdeniz)
