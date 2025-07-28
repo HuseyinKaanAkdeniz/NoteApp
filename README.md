@@ -1,5 +1,71 @@
-# 📝 Note Application
-![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white) ![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white) ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)[![Medium](https://img.shields.io/badge/Medium-12100E?logo=medium&logoColor=white)](https://medium.com/@https://medium.com/@huseyinkaan28) 
-## Getting Started
-Hello, today I would like to introduce you to the note application I have created. I completed this application by creating a structure similar to sticky notes.
-You can check my Medium account for the details and development stages of the project, which I will add shortly. In the future, I am thinking of creating a notification section for your daily routine tasks.
+NoteApp
+
+Flutter Dart
+
+A simple and fast sticky notes application to keep your thoughts organized!
+Table of Contents
+
+    Features
+    Screenshots
+    Installation
+    Usage
+    Roadmap
+    Contributing
+    License
+    Contact
+
+Features
+
+    Create, delete, and edit notes easily
+    Colorful sticky note cards
+    Search functionality
+    Categorize notes (planned)
+    Add images to notes (planned)
+
+Screenshots
+
+Home Screen Add Note
+Installation
+
+# Clone the repository
+git clone https://github.com/HuseyinKaanAkdeniz/NoteApp.git
+
+# Navigate to the project directory
+cd NoteApp
+
+# Install dependencies
+flutter pub get
+
+# Run the application
+flutter run
+
+    Minimum Flutter SDK: 28
+
+Usage
+
+After launching the app, you can quickly add, delete, or edit your notes from the home screen.
+Roadmap
+
+    Basic note-taking functionality
+    Categorize notes
+    Add images to notes
+    Cross-platform synchronization
+    Dark mode support
+
+Contributing
+
+Contributions are welcome! Please open an issue to discuss your ideas before submitting a pull request.
+
+    Fork the project
+    Create a new branch (git checkout -b your-feature)
+    Commit your changes (git commit -m 'Add some feature')
+    Push to the branch (git push origin your-feature)
+    Open a pull request
+
+License
+
+MIT
+Contact
+
+For more information: kaanakdeniz@gmail.com
+Development insights: My Medium Profile
