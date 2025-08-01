@@ -24,8 +24,7 @@ A simple and fast sticky notes application to keep your thoughts organized!
 
 - Create, delete, and edit notes easily
 - Colorful sticky note cards
-- Search functionality
-- Categorize notes (planned)
+- Daily notifications(planned)
 - Add images to notes (planned)
 
 ---
@@ -65,7 +64,6 @@ After launching the app, you can quickly add, delete, or edit your notes from th
 - [x] Basic note-taking functionality
 - [ ] Add images to notes
 - [ ] Daily notifications
-- [ ] Dark mode support
 
 ---
 
