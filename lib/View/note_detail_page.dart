@@ -70,6 +70,17 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                   ],
                 ),
               ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Notification added"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        },
+        child: Icon(Icons.notification_add_outlined, color: Colors.black),
+      ),
     );
   }
 
@@ -80,15 +91,24 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         MaterialPageRoute(builder: (context) => AddEditNotePage(note: notes)),
       );
       refreshnotes();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Not güncellendi"),
+          backgroundColor: Colors.green,
+        ),
+      );
     },
-    icon: Icon(Icons.edit_outlined),
+    icon: Icon(Icons.edit_outlined, color: Colors.white70),
   );
 
   Widget deletebutton() => IconButton(
-    icon: Icon(Icons.remove),
+    icon: Icon(Icons.delete, color: Colors.white70),
     onPressed: () async {
       await NotesDatabase.instance.delete(widget.noteid);
       Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Not silindi"), backgroundColor: Colors.red),
+      );
     },
   );
 }

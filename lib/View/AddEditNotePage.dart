@@ -6,10 +6,7 @@ import '../widget/note_form_widget.dart';
 class AddEditNotePage extends StatefulWidget {
   final Note? note;
 
-  const AddEditNotePage({
-    Key? key,
-    this.note,
-  }) : super(key: key);
+  const AddEditNotePage({Key? key, this.note}) : super(key: key);
 
   @override
   State<AddEditNotePage> createState() => _AddEditNotePageState();
@@ -34,25 +31,23 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          actions: [buildButton()],
-        ),
-        body: Form(
-          key: _formKey,
-          child: NoteFormWidget(
-            isImportant: isImportant,
-            number: number,
-            title: title,
-            description: description,
-            onChangedImportant: (isImportant) =>
-                setState(() => this.isImportant = isImportant),
-            onChangedNumber: (number) => setState(() => this.number = number),
-            onChangedTitle: (title) => setState(() => this.title = title),
-            onChangedDescription: (description) =>
-                setState(() => this.description = description),
-          ),
-        ),
-      );
+    appBar: AppBar(actions: [buildButton()]),
+    body: Form(
+      key: _formKey,
+      child: NoteFormWidget(
+        isImportant: isImportant,
+        number: number,
+        title: title,
+        description: description,
+        onChangedImportant:
+            (isImportant) => setState(() => this.isImportant = isImportant),
+        onChangedNumber: (number) => setState(() => this.number = number),
+        onChangedTitle: (title) => setState(() => this.title = title),
+        onChangedDescription:
+            (description) => setState(() => this.description = description),
+      ),
+    ),
+  );
 
   Widget buildButton() {
     final isFormValid = title.isNotEmpty && description.isNotEmpty;

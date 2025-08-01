@@ -42,8 +42,35 @@ class _NotesPageState extends State<NotesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Notes", style: TextStyle(fontSize: 24)),
-        actions: [Icon(Icons.search), SizedBox(width: 12)],
+        title: Text(
+          "Notes",
+          style: TextStyle(fontSize: 24, color: Colors.white70),
+        ),
+        actions: [
+          GestureDetector(
+            onTap: () {
+              if (isloading == false) {
+                refreshnotes();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Notlar yenilendi"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Notlar yenilenmedi"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Icon(Icons.search, color: Colors.white70),
+          ),
+          SizedBox(width: 12),
+        ],
       ),
       body: Center(
         child:
@@ -55,7 +82,7 @@ class _NotesPageState extends State<NotesPage> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.black,
-        child: Icon(Icons.add),
+        child: Icon(Icons.add, color: Colors.white70),
         onPressed: () async {
           await Navigator.of(
             context,
@@ -83,10 +110,7 @@ class _NotesPageState extends State<NotesPage> {
           );
           refreshnotes();
         },
-        child: NoteCardWidget(
-          note: note,
-          index: note.id!,
-        ),
+        child: NoteCardWidget(note: note, index: note.id!),
       );
     },
   );
