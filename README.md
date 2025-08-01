@@ -31,7 +31,7 @@ A simple and fast sticky notes application to keep your thoughts organized!
 
 ## Screenshots
 
----
+![Screenshot](screenshot.png)
 
 ## Installation
 
