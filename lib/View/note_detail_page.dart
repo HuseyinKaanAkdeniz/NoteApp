@@ -71,12 +71,84 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                 ),
               ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Notification added"),
-              backgroundColor: Colors.green,
-            ),
+        onPressed: () async {
+          TimeOfDay? selectedTime;
+          String repeatType = "once";
+
+          await showDialog(
+            context: context,
+            builder: (context) {
+              return StatefulBuilder(
+                builder:
+                    (context, setState) => AlertDialog(
+                      title: Text("Bildirim Ayarları"),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  selectedTime = picked;
+                                });
+                              }
+                            },
+                            child: Text(
+                              selectedTime == null
+                                  ? "Zaman Seç"
+                                  : "${selectedTime!.format(context)}",
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Radio<String>(
+                                value: "once",
+                                groupValue: repeatType,
+                                onChanged: (value) {
+                                  setState(() {
+                                    repeatType = value!;
+                                  });
+                                },
+                              ),
+                              Text("Tek Seferlik"),
+                              Radio<String>(
+                                value: "daily",
+                                groupValue: repeatType,
+                                onChanged: (value) {
+                                  setState(() {
+                                    repeatType = value!;
+                                  });
+                                },
+                              ),
+                              Text("Her Gün"),
+                            ],
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            // Burada seçilen zamanı ve repeatType'ı kullanabilirsin
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Zaman: ${selectedTime?.format(context) ?? '-'}, Tip: $repeatType",
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text("Onayla"),
+                        ),
+                      ],
+                    ),
+              );
+            },
           );
         },
         child: Icon(Icons.notification_add_outlined, color: Colors.black),
