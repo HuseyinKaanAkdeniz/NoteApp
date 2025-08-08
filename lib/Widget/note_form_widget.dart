@@ -11,7 +11,7 @@ class NoteFormWidget extends StatelessWidget {
   final ValueChanged<String> onChangedDescription;
 
   const NoteFormWidget({
-    Key? key,
+    super.key,
     this.isImportant = false,
     this.number = 0,
     this.title = '',
@@ -20,7 +20,7 @@ class NoteFormWidget extends StatelessWidget {
     required this.onChangedNumber,
     required this.onChangedTitle,
     required this.onChangedDescription,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(

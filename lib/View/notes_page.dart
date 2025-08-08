@@ -5,6 +5,8 @@ import 'package:noteapplication/Model/notes_db.dart';
 import 'package:noteapplication/Model/Model.dart';
 import 'package:noteapplication/View/AddEditNotePage.dart';
 import 'package:noteapplication/View/note_detail_page.dart';
+import 'package:noteapplication/View/notification_management_page.dart';
+import 'package:noteapplication/View/notification_debug_page.dart';
 import 'package:noteapplication/Widget/note_card_widget.dart';
 
 class NotesPage extends StatefulWidget {
@@ -68,6 +70,28 @@ class _NotesPageState extends State<NotesPage> {
               }
             },
             child: Icon(Icons.search, color: Colors.white70),
+          ),
+          SizedBox(width: 12),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NotificationManagementPage(),
+                ),
+              );
+            },
+            icon: Icon(Icons.notifications, color: Colors.white70),
+          ),
+          SizedBox(width: 12),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NotificationDebugPage(),
+                ),
+              );
+            },
+            icon: Icon(Icons.bug_report, color: Colors.white70),
           ),
           SizedBox(width: 12),
         ],

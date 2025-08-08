@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:noteapplication/Model/Model.dart';
+import 'package:noteapplication/Model/ScheduleNotification.dart';
 import 'package:noteapplication/Model/notes_db.dart';
 import 'package:noteapplication/View/AddEditNotePage.dart';
-import 'package:noteapplication/View/notes_page.dart';
 
 class NoteDetailPage extends StatefulWidget {
   final int noteid;
-  const NoteDetailPage({Key? key, required this.noteid}) : super(key: key);
-
+  const NoteDetailPage({super.key, required this.noteid});
   @override
   State<NoteDetailPage> createState() => _NoteDetailPageState();
 }
@@ -19,6 +18,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
   @override
   void initState() {
     super.initState();
+    initializeNotifications();
     refreshnotes();
   }
 
@@ -26,12 +26,15 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
     setState(() {
       isloading = true;
     });
-    this.notes = await NotesDatabase.instance.readNote(widget.noteid);
+    notes = await NotesDatabase.instance.readNote(widget.noteid);
+    // Check if widget is still mounted before updating state
+    if (!mounted) return;
     setState(() {
       isloading = false;
     });
   }
 
+  @override
   void dispose() {
     NotesDatabase.instance.close();
     super.dispose();
@@ -100,7 +103,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                             child: Text(
                               selectedTime == null
                                   ? "Zaman Seç"
-                                  : "${selectedTime!.format(context)}",
+                                  : selectedTime!.format(context),
                             ),
                           ),
                           SizedBox(height: 16),
@@ -131,18 +134,62 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                         ],
                       ),
                       actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            // Burada seçilen zamanı ve repeatType'ı kullanabilirsin
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Zaman: ${selectedTime?.format(context) ?? '-'}, Tip: $repeatType",
-                                ),
-                              ),
-                            );
-                          },
+                        // Örnek: Test amaçlı TextButton widget’ı ve hata/success Snackbar yapısı
+                                                 TextButton(
+                           onPressed: () async {
+                             final success = await safeNotificationOperation(() async {
+                               await showTestNotification();
+                             }, context);
+                             
+                             if (success && mounted) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 SnackBar(
+                                   content: Text(
+                                     'Test bildirimi başarıyla gönderildi',
+                                   ),
+                                 ),
+                               );
+                             }
+                           },
+                          child: Text('Test Bildirim Gönder'),
+                        ),
+
+                                                 TextButton(
+                           onPressed: () async {
+                             Navigator.of(context).pop(); // Önce dialogu kapat
+
+                             if (!mounted) return;
+
+                             if (selectedTime != null) {
+                               final success = await safeNotificationOperation(() async {
+                                 if (repeatType == "daily") {
+                                   await scheduleDailyNotification(selectedTime!, notes.title);
+                                 } else {
+                                   await scheduleOnceNotification(selectedTime!, notes.title);
+                                 }
+                               }, context);
+
+                               if (success && mounted) {
+                                 ScaffoldMessenger.of(context).showSnackBar(
+                                   SnackBar(
+                                     content: Text(
+                                       "Bildirim ayarlandı: Zaman ${selectedTime!.format(context)}, Tip: $repeatType",
+                                     ),
+                                     backgroundColor: Colors.green,
+                                   ),
+                                 );
+                               }
+                             } else {
+                               if (!mounted) return;
+
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(
+                                   content: Text("Lütfen önce zamanı seçiniz!"),
+                                   backgroundColor: Colors.orange,
+                                 ),
+                               );
+                             }
+                           },
                           child: Text("Onayla"),
                         ),
                       ],
@@ -163,6 +210,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         MaterialPageRoute(builder: (context) => AddEditNotePage(note: notes)),
       );
       refreshnotes();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Not güncellendi"),
@@ -177,6 +225,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
     icon: Icon(Icons.delete, color: Colors.white70),
     onPressed: () async {
       await NotesDatabase.instance.delete(widget.noteid);
+      if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Not silindi"), backgroundColor: Colors.red),
