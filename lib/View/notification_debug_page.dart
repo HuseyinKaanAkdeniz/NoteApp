@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:noteapplication/Model/ScheduleNotification.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
 class NotificationDebugPage extends StatefulWidget {
   const NotificationDebugPage({Key? key}) : super(key: key);
 
@@ -23,18 +26,20 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
 
   Future<void> runDebugChecks() async {
     String info = '';
-    
+
     // Check exact alarm permission
     try {
       final canScheduleExactAlarms = await checkExactAlarmPermission();
-      info += 'Exact Alarm Permission: ${canScheduleExactAlarms ? "GRANTED" : "DENIED"}\n';
+      info +=
+          'Exact Alarm Permission: ${canScheduleExactAlarms ? "GRANTED" : "DENIED"}\n';
     } catch (e) {
       info += 'Exact Alarm Permission Check Error: $e\n';
     }
 
     // Check notification permission
     try {
-      final permissionStatus = await NotificationPermissionManager.checkPermission();
+      final permissionStatus =
+          await NotificationPermissionManager.checkPermission();
       info += 'Notification Permission: ${permissionStatus.name}\n';
     } catch (e) {
       info += 'Notification Permission Check Error: $e\n';
@@ -42,9 +47,12 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
 
     // Check notification channels
     try {
-      final androidPlugin = flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      
+      final androidPlugin =
+          flutterLocalNotificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
+
       if (androidPlugin != null) {
         final channels = await androidPlugin.getNotificationChannels();
         if (channels != null) {
@@ -95,10 +103,7 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -107,16 +112,18 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
     try {
       final now = DateTime.now();
       final scheduledTime = now.add(const Duration(minutes: 1));
-      
+
       await scheduleSpecificDateNotification(scheduledTime, 'Debug Test Note');
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Notification scheduled for: ${scheduledTime.toString()}'),
+          content: Text(
+            'Notification scheduled for: ${scheduledTime.toString()}',
+          ),
           backgroundColor: Colors.blue,
         ),
       );
-      
+
       // Reload pending notifications
       await loadPendingNotifications();
     } catch (e) {
@@ -133,16 +140,18 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
     try {
       final now = DateTime.now();
       final testTime = TimeOfDay(hour: now.hour, minute: (now.minute + 1) % 60);
-      
+
       await scheduleDailyNotification(testTime, 'Daily Debug Test');
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Daily notification scheduled for: ${testTime.format(context)}'),
+          content: Text(
+            'Daily notification scheduled for: ${testTime.format(context)}',
+          ),
           backgroundColor: Colors.blue,
         ),
       );
-      
+
       await loadPendingNotifications();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -222,9 +231,9 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Test Buttons
             Card(
               child: Padding(
@@ -279,9 +288,9 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Pending Notifications
             Card(
               child: Padding(
@@ -317,18 +326,22 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                         ),
                       )
                     else
-                      ...pendingNotifications.map((notification) => ListTile(
-                        leading: const Icon(Icons.notifications),
-                        title: Text(notification.title ?? 'No title'),
-                        subtitle: Text('ID: ${notification.id}'),
-                        trailing: IconButton(
-                          onPressed: () async {
-                            await flutterLocalNotificationsPlugin.cancel(notification.id);
-                            await loadPendingNotifications();
-                          },
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                      ...pendingNotifications.map(
+                        (notification) => ListTile(
+                          leading: const Icon(Icons.notifications),
+                          title: Text(notification.title ?? 'No title'),
+                          subtitle: Text('ID: ${notification.id}'),
+                          trailing: IconButton(
+                            onPressed: () async {
+                              await flutterLocalNotificationsPlugin.cancel(
+                                notification.id,
+                              );
+                              await loadPendingNotifications();
+                            },
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                          ),
                         ),
-                      )),
+                      ),
                   ],
                 ),
               ),

@@ -66,7 +66,7 @@ class _PermissionManagementPageState extends State<PermissionManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bildirim İzinleri'),
+        title: const Text('Bildirim İzinleri', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -76,76 +76,118 @@ class _PermissionManagementPageState extends State<PermissionManagementPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Status Card
-            Card(
-              color: Colors.blueGrey.shade800,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _getStatusIcon(currentStatus),
-                          color: _getStatusColor(currentStatus),
-                          size: 32,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Mevcut Durum',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                              Text(
-                                _getStatusText(currentStatus),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Status Card
+              Card(
+                color: Colors.blueGrey.shade800,
+                child: Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _getStatusIcon(currentStatus),
+                            color: _getStatusColor(currentStatus),
+                            size: 32,
                           ),
-                        ),
-                        if (isLoading)
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Mevcut Durum',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                Text(
+                                  _getStatusText(currentStatus),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      NotificationPermissionManager.getPermissionStatusMessage(currentStatus),
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                          if (isLoading)
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      Text(
+                        NotificationPermissionManager.getPermissionStatusMessage(currentStatus),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            if (currentStatus != NotificationPermissionStatus.granted) ...[
+        
+              const SizedBox(height: 24),
+        
+              // Action Buttons
+              if (currentStatus != NotificationPermissionStatus.granted) ...[
+                const Text(
+                  'İzin İşlemleri',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                ElevatedButton.icon(
+                  onPressed: isLoading ? null : requestPermission,
+                  icon: const Icon(Icons.notifications_active),
+                  label: const Text('Bildirim İzni İste'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                ),
+        
+                const SizedBox(height: 12),
+        
+                if (currentStatus == NotificationPermissionStatus.permanentlyDenied)
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      _showSettingsInstructions();
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Ayarları Aç'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
+              ],
+        
+              const SizedBox(height: 24),
+        
+              // Information Section
               const Text(
-                'İzin İşlemleri',
+                'Bildirim İzinleri Hakkında',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -153,98 +195,58 @@ class _PermissionManagementPageState extends State<PermissionManagementPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              
-              ElevatedButton.icon(
-                onPressed: isLoading ? null : requestPermission,
-                icon: const Icon(Icons.notifications_active),
-                label: const Text('Bildirim İzni İste'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
+        
+              _buildInfoCard(
+                icon: Icons.info_outline,
+                title: 'Neden Bildirim İzni Gerekli?',
+                content: 'Bildirimler, notlarınız için hatırlatıcılar ayarlamanıza ve önemli bilgileri kaçırmamanıza yardımcı olur.',
               ),
-
+        
               const SizedBox(height: 12),
-
-              if (currentStatus == NotificationPermissionStatus.permanentlyDenied)
-                ElevatedButton.icon(
-                  onPressed: () {
-                    _showSettingsInstructions();
-                  },
-                  icon: const Icon(Icons.settings),
-                  label: const Text('Ayarları Aç'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
+        
+              _buildInfoCard(
+                icon: Icons.security,
+                title: 'Güvenlik',
+                content: 'Bildirimler sadece sizin ayarladığınız zamanlarda gönderilir. Kişisel verileriniz güvende kalır.',
+              ),
+        
+              const SizedBox(height: 12),
+        
+              _buildInfoCard(
+                icon: Icons.settings,
+                title: 'İzin Yönetimi',
+                content: 'İzinleri istediğiniz zaman cihaz ayarlarından değiştirebilir veya iptal edebilirsiniz.',
+              ),
+        
+              const SizedBox(height: 24),
+        
+              // Troubleshooting Section
+              const Text(
+                'Sorun Giderme',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
+              ),
+              const SizedBox(height: 12),
+        
+              _buildTroubleshootingItem(
+                'Bildirimler gelmiyor',
+                'Cihaz ayarlarından uygulama bildirimlerinin açık olduğundan emin olun.',
+              ),
+        
+              _buildTroubleshootingItem(
+                'İzin verildi ama bildirim yok',
+                'Cihazın "Rahatsız Etme" modunda olmadığından emin olun.',
+              ),
+        
+              _buildTroubleshootingItem(
+                'Bildirimler yanlış zamanda geliyor',
+                'Cihazın saat ayarlarının doğru olduğundan emin olun.',
+              ),
             ],
-
-            const SizedBox(height: 24),
-
-            // Information Section
-            const Text(
-              'Bildirim İzinleri Hakkında',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _buildInfoCard(
-              icon: Icons.info_outline,
-              title: 'Neden Bildirim İzni Gerekli?',
-              content: 'Bildirimler, notlarınız için hatırlatıcılar ayarlamanıza ve önemli bilgileri kaçırmamanıza yardımcı olur.',
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildInfoCard(
-              icon: Icons.security,
-              title: 'Güvenlik',
-              content: 'Bildirimler sadece sizin ayarladığınız zamanlarda gönderilir. Kişisel verileriniz güvende kalır.',
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildInfoCard(
-              icon: Icons.settings,
-              title: 'İzin Yönetimi',
-              content: 'İzinleri istediğiniz zaman cihaz ayarlarından değiştirebilir veya iptal edebilirsiniz.',
-            ),
-
-            const SizedBox(height: 24),
-
-            // Troubleshooting Section
-            const Text(
-              'Sorun Giderme',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _buildTroubleshootingItem(
-              'Bildirimler gelmiyor',
-              'Cihaz ayarlarından uygulama bildirimlerinin açık olduğundan emin olun.',
-            ),
-
-            _buildTroubleshootingItem(
-              'İzin verildi ama bildirim yok',
-              'Cihazın "Rahatsız Etme" modunda olmadığından emin olun.',
-            ),
-
-            _buildTroubleshootingItem(
-              'Bildirimler yanlış zamanda geliyor',
-              'Cihazın saat ayarlarının doğru olduğundan emin olun.',
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -258,7 +260,7 @@ class _PermissionManagementPageState extends State<PermissionManagementPage> {
     return Card(
       color: Colors.blueGrey.shade700,
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: EdgeInsets.all(10.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -305,7 +307,7 @@ class _PermissionManagementPageState extends State<PermissionManagementPage> {
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Text(
               solution,
               style: const TextStyle(

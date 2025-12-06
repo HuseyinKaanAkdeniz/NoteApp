@@ -32,7 +32,7 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
   Widget build(BuildContext context) {
     return Scaffold(
              appBar: AppBar(
-         title: const Text('Bildirim Yönetimi'),
+         title: const Text('Bildirim Yönetimi', style: TextStyle(color: Colors.white)),
          backgroundColor: Colors.transparent,
          elevation: 0,
          actions: [

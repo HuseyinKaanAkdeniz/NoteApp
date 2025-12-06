@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:noteapplication/Model/ScheduleNotification.dart';
 import 'package:noteapplication/View/notes_page.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  initializeNotifications();
+  await NotificationService().init();
   runApp(const MainApp());
 }
 

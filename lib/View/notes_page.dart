@@ -5,8 +5,8 @@ import 'package:noteapplication/Model/notes_db.dart';
 import 'package:noteapplication/Model/Model.dart';
 import 'package:noteapplication/View/AddEditNotePage.dart';
 import 'package:noteapplication/View/note_detail_page.dart';
+import 'package:noteapplication/View/permission_management_page.dart';
 import 'package:noteapplication/View/notification_management_page.dart';
-import 'package:noteapplication/View/notification_debug_page.dart';
 import 'package:noteapplication/Widget/note_card_widget.dart';
 
 class NotesPage extends StatefulWidget {
@@ -19,6 +19,7 @@ class NotesPage extends StatefulWidget {
 class _NotesPageState extends State<NotesPage> {
   late List<Note> notes;
   bool isloading = false;
+  
   @override
   void initState() {
     super.initState();
@@ -49,63 +50,49 @@ class _NotesPageState extends State<NotesPage> {
           style: TextStyle(fontSize: 24, color: Colors.white70),
         ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              if (isloading == false) {
-                refreshnotes();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Notlar yenilendi"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Notlar yenilenmedi"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: Icon(Icons.search, color: Colors.white70),
-          ),
-          SizedBox(width: 12),
           IconButton(
+            icon: Icon(Icons.admin_panel_settings, color: Colors.white70),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const NotificationManagementPage(),
+                  builder: (context) => PermissionManagementPage(),
                 ),
               );
             },
+          ),
+          IconButton(
             icon: Icon(Icons.notifications, color: Colors.white70),
-          ),
-          SizedBox(width: 12),
-          IconButton(
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const NotificationDebugPage(),
+                  builder: (context) => NotificationManagementPage(),
                 ),
               );
             },
-            icon: Icon(Icons.bug_report, color: Colors.white70),
           ),
           SizedBox(width: 12),
         ],
       ),
-      body: Center(
-        child:
-            isloading
-                ? CircularProgressIndicator()
-                : notes.isEmpty
-                ? Text("no notes", style: TextStyle(color: Colors.white))
-                : cardview(),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await refreshnotes();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Notlar yenilendi"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        },
+        child: Center(
+          child: isloading
+              ? CircularProgressIndicator()
+              : notes.isEmpty
+                  ? Text("no notes", style: TextStyle(color: Colors.white))
+                  : cardview(),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.black54,
         child: Icon(Icons.add, color: Colors.white70),
         onPressed: () async {
           await Navigator.of(
@@ -118,24 +105,24 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   Widget cardview() => AlignedGridView.count(
-    crossAxisCount: 3,
-    mainAxisSpacing: 3,
-    crossAxisSpacing: 3,
-    itemCount: notes.length,
-    itemBuilder: (context, index) {
-      final note = notes[index];
+        crossAxisCount: 3,
+        mainAxisSpacing: 3,
+        crossAxisSpacing: 3,
+        itemCount: notes.length,
+        itemBuilder: (context, index) {
+          final note = notes[index];
 
-      return GestureDetector(
-        onTap: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => NoteDetailPage(noteid: note.id!),
-            ),
+          return GestureDetector(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => NoteDetailPage(noteid: note.id!),
+                ),
+              );
+              refreshnotes();
+            },
+            child: NoteCardWidget(note: note, index: note.id!),
           );
-          refreshnotes();
         },
-        child: NoteCardWidget(note: note, index: note.id!),
       );
-    },
-  );
 }

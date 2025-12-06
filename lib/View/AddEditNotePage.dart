@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:noteapplication/Model/Model.dart';
 import 'package:noteapplication/Model/notes_db.dart';
+import 'package:noteapplication/Model/ScheduleNotification.dart';
 import '../widget/note_form_widget.dart';
 
 class AddEditNotePage extends StatefulWidget {
@@ -18,6 +19,7 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
   late int number;
   late String title;
   late String description;
+  DateTime? _reminderDateTime;
 
   @override
   void initState() {
@@ -27,24 +29,63 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
     number = widget.note?.number ?? 0;
     title = widget.note?.title ?? '';
     description = widget.note?.description ?? '';
+    initializeNotifications(); // Initialize notifications when page loads
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(actions: [buildButton()]),
+    appBar: AppBar(
+      actions: [
+        IconButton(
+          icon: Icon(
+            _reminderDateTime != null 
+              ? Icons.notifications_active 
+              : Icons.notifications_none,
+            color: _reminderDateTime != null ? Colors.amber : null,
+          ),
+          onPressed: _pickReminderDate,
+        ),
+        buildButton(),
+      ],
+    ),
     body: Form(
       key: _formKey,
-      child: NoteFormWidget(
-        isImportant: isImportant,
-        number: number,
-        title: title,
-        description: description,
-        onChangedImportant:
-            (isImportant) => setState(() => this.isImportant = isImportant),
-        onChangedNumber: (number) => setState(() => this.number = number),
-        onChangedTitle: (title) => setState(() => this.title = title),
-        onChangedDescription:
-            (description) => setState(() => this.description = description),
+      child: Column(
+        children: [
+          if (_reminderDateTime != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                   const Icon(Icons.alarm, size: 16, color: Colors.amber),
+                   const SizedBox(width: 8),
+                   Text(
+                     'Reminder: ${_reminderDateTime.toString().split('.')[0]}',
+                     style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                   ),
+                   const Spacer(),
+                   IconButton(
+                     icon: const Icon(Icons.close, size: 16),
+                     onPressed: () => setState(() => _reminderDateTime = null),
+                   )
+                ],
+              ),
+            ),
+          Expanded(
+            child: NoteFormWidget(
+              isImportant: isImportant,
+              number: number,
+              title: title,
+              description: description,
+              onChangedImportant:
+                  (isImportant) => setState(() => this.isImportant = isImportant),
+              onChangedNumber: (number) => setState(() => this.number = number),
+              onChangedTitle: (title) => setState(() => this.title = title),
+              onChangedDescription:
+                  (description) => setState(() => this.description = description),
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -65,11 +106,57 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
     );
   }
 
+  Future<void> _pickReminderDate() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _reminderDateTime ?? now,
+      firstDate: now,
+      lastDate: DateTime(2100),
+    );
+
+    if (date == null) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_reminderDateTime ?? now),
+    );
+
+    if (time == null) return;
+
+    setState(() {
+      _reminderDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+
+    // Check/Request permission immediately when user tries to set a reminder
+    await ensureNotificationPermission(context);
+  }
+
   void addOrUpdateNote() async {
     final isValid = _formKey.currentState!.validate();
 
     if (isValid) {
       final isUpdating = widget.note != null;
+      
+      if (_reminderDateTime != null) {
+        // Schedule the notification
+        await scheduleSpecificDateNotification(
+          _reminderDateTime!,
+          title,
+        );
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Hatırlatıcı ${_reminderDateTime.toString().split('.')[0]} için ayarlandı')),
+          );
+        }
+      }
 
       if (isUpdating) {
         await updateNote();
