@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.noteapplication"
-        minSdk = 22
+        minSdk = flutter.minSdkVersion
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
