@@ -1,14 +1,14 @@
-// flutter_notifications_service.dart
-// Tek dosyada sade, güvenli ve Samsung/Android12+ uyumlu bildirim servisi
-
 import 'dart:io';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+// ============================================================================
+// NotificationService — Singleton
+// ============================================================================
 
 class NotificationService {
   NotificationService._privateConstructor();
@@ -19,166 +19,164 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
-  static const String _channelDailyId = 'daily_reminder_channel';
-  static const String _channelOnceId = 'once_reminder_channel';
+  // Kanal ID'leri
+  static const String _channelDailyId    = 'daily_reminder_channel';
+  static const String _channelOnceId     = 'once_reminder_channel';
   static const String _channelSpecificId = 'specific_date_channel';
-  static const String _channelTestId = 'test_channel';
+  static const String _channelTestId     = 'test_channel';
 
   bool _initialized = false;
 
+  // --------------------------------------------------------------------------
+  // init
+  // --------------------------------------------------------------------------
   Future<void> init({
     AndroidInitializationSettings? androidInitSettings,
-    WindowsInitializationSettings? windowsInitSettings,
   }) async {
     if (_initialized) return;
 
+    // 1. Zaman dilimi verilerini yükle
     tz.initializeTimeZones();
 
+    // 2. Cihazın yerel zaman dilimini al
+    //    flutter_timezone 5.x → getLocalTimezone() direkt String döndürür
+    //    Eski sürümler       → .identifier ile String alınır
+    //    Her iki durumu da try/catch ile yakala
     try {
+      final dynamic rawTz = await FlutterTimezone.getLocalTimezone();
       final String tzName =
-          (await FlutterTimezone.getLocalTimezone()).identifier;
+          (rawTz is String) ? rawTz : (rawTz as dynamic).identifier as String;
       tz.setLocalLocation(tz.getLocation(tzName));
       debugPrint('Timezone set to: $tzName');
     } catch (e) {
-      debugPrint('Warning: could not set timezone: $e');
+      debugPrint('Warning: could not set timezone, using UTC: $e');
+      tz.setLocalLocation(tz.UTC);
     }
 
+    // 3. Başlatma ayarları
     final AndroidInitializationSettings androidSettings =
         androidInitSettings ??
         const AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final WindowsInitializationSettings windowsSettings =
-        windowsInitSettings ??
-        const WindowsInitializationSettings(
-          appName: 'NoteApplication',
-          appUserModelId: 'com.example.noteapplication',
-          guid: '{771CF256-F893-4F32-9D10-3B4A0C312355}',
-        );
-
     final InitializationSettings initSettings = InitializationSettings(
       android: androidSettings,
-      windows: windowsSettings,
-      // iOS / macOS initialization can be added here if needed
     );
 
     await _plugin.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        debugPrint('Notification clicked: ${response.payload}');
-        // navigation should be handled by app-level routing (not here)
+        debugPrint('Bildirime tıklandı: ${response.payload}');
+        // Navigasyon uygulama katmanında yönetilmeli
       },
     );
 
+    // 4. Kanalları oluştur (sadece Android)
     await _createNotificationChannels();
 
     _initialized = true;
-    debugPrint('NotificationService initialized');
+    debugPrint('NotificationService başlatıldı');
   }
 
+  // --------------------------------------------------------------------------
+  // Bildirim kanalları
+  // --------------------------------------------------------------------------
   Future<void> _createNotificationChannels() async {
     if (!Platform.isAndroid) return;
 
-    final AndroidNotificationChannel daily = AndroidNotificationChannel(
-      _channelDailyId,
-      'Günlük Hatırlatıcı',
-      description: 'Günlük hatırlatıcı bildirimleri',
-      importance: Importance.max,
-      playSound: true,
-    );
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
 
-    final AndroidNotificationChannel once = AndroidNotificationChannel(
-      _channelOnceId,
-      'Tek Seferlik Hatırlatıcı',
-      description: 'Tek seferlik hatırlatıcı bildirimleri',
-      importance: Importance.max,
-      playSound: true,
-    );
+    if (androidImpl == null) return;
 
-    final AndroidNotificationChannel specific = AndroidNotificationChannel(
-      _channelSpecificId,
-      'Belirli Tarih Hatırlatıcı',
-      description: 'Belirli tarih hatırlatıcı bildirimleri',
-      importance: Importance.max,
-      playSound: true,
-    );
+    final channels = [
+      const AndroidNotificationChannel(
+        _channelDailyId,
+        'Günlük Hatırlatıcı',
+        description: 'Günlük hatırlatıcı bildirimleri',
+        importance: Importance.max,
+        playSound: true,
+      ),
+      const AndroidNotificationChannel(
+        _channelOnceId,
+        'Tek Seferlik Hatırlatıcı',
+        description: 'Tek seferlik hatırlatıcı bildirimleri',
+        importance: Importance.max,
+        playSound: true,
+      ),
+      const AndroidNotificationChannel(
+        _channelSpecificId,
+        'Belirli Tarih Hatırlatıcı',
+        description: 'Belirli tarih hatırlatıcı bildirimleri',
+        importance: Importance.max,
+        playSound: true,
+      ),
+      const AndroidNotificationChannel(
+        _channelTestId,
+        'Test Kanalı',
+        description: 'Test amaçlı bildirimler',
+        importance: Importance.max,
+        playSound: true,
+      ),
+    ];
 
-    final AndroidNotificationChannel test = AndroidNotificationChannel(
-      _channelTestId,
-      'Test Kanalı',
-      description: 'Test amaçlı bildirimler',
-      importance: Importance.max,
-      playSound: true,
-    );
-
-    final androidImpl =
-        _plugin
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-            >();
-
-    try {
-      await androidImpl?.createNotificationChannel(daily);
-      await androidImpl?.createNotificationChannel(once);
-      await androidImpl?.createNotificationChannel(specific);
-      await androidImpl?.createNotificationChannel(test);
-      debugPrint('Channels created');
-    } catch (e) {
-      debugPrint('Channel creation error: $e');
+    for (final channel in channels) {
+      try {
+        await androidImpl.createNotificationChannel(channel);
+      } catch (e) {
+        debugPrint('Kanal oluşturma hatası (${channel.id}): $e');
+      }
     }
+
+    debugPrint('Bildirim kanalları oluşturuldu');
   }
 
-  // --- Permissions ---
-  /// Android 13+ requires POST_NOTIFICATIONS runtime permission.
-  /// For exact alarms on Android 12+ the user may need to grant schedule-exact-alarm in settings.
+  // --------------------------------------------------------------------------
+  // İzin yönetimi
+  // --------------------------------------------------------------------------
+
+  /// Android 13+ için POST_NOTIFICATIONS runtime izni ister.
   Future<bool> requestNotificationPermission() async {
     try {
-      final androidImpl =
-          _plugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >();
-
+      final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
       final granted =
           await androidImpl?.requestNotificationsPermission() ?? false;
-      debugPrint('Notifications permission granted: $granted');
+      debugPrint('Bildirim izni: $granted');
       return granted;
     } catch (e) {
-      debugPrint('requestNotificationPermission error: $e');
+      debugPrint('requestNotificationPermission hatası: $e');
       return false;
     }
   }
 
-  /// Opens the Android settings screen where user can allow exact alarms for your app.
+  /// Android 12+ için tam zamanlı alarm iznini ayarlar ekranında açar.
   Future<void> requestExactAlarmPermission({String? packageName}) async {
     if (!Platform.isAndroid) return;
-
     try {
-      // Android Settings action: REQUEST_SCHEDULE_EXACT_ALARM
       final intent = AndroidIntent(
         action: 'android.settings.REQUEST_SCHEDULE_EXACT_ALARM',
-        arguments:
-            packageName != null
-                ? <String, dynamic>{
-                  'android.provider.extra.APP_PACKAGE': packageName,
-                }
-                : null,
+        arguments: packageName != null
+            ? <String, dynamic>{
+                'android.provider.extra.APP_PACKAGE': packageName,
+              }
+            : null,
       );
       await intent.launch();
     } catch (e) {
-      debugPrint('requestExactAlarmPermission error: $e');
+      debugPrint('requestExactAlarmPermission hatası: $e');
     }
   }
 
-  // Check by trying to schedule a test exact alarm and catching errors
+  /// Tam zamanlı alarm iznini test eder.
   Future<bool> canScheduleExactAlarms() async {
     if (!Platform.isAndroid) return true;
-
     try {
-      final now = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5));
+      final now =
+          tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5));
       await _plugin.zonedSchedule(
         999999,
-        'permission_test',
-        'permission_test',
+        'izin_testi',
+        'izin_testi',
         now,
         const NotificationDetails(
           android: AndroidNotificationDetails(
@@ -189,44 +187,22 @@ class NotificationService {
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
-
       await _plugin.cancel(999999);
       return true;
     } catch (e) {
-      final message = e.toString();
-      if (message.contains('exact_alarms_not_permitted')) {
-        return false;
-      }
-      // If some other error happened, return false conservatively
+      if (e.toString().contains('exact_alarms_not_permitted')) return false;
       return false;
     }
   }
 
-  // --- Scheduling helpers ---
-
-  Future<void> showTestNotification() async {
-    await _plugin.show(
-      1,
-      'Test Bildirimi',
-      'Bu bir deneme bildirimi.',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelTestId,
-          'Test Kanalı',
-          channelDescription: 'Test amaçlı bildirimler',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-    );
-  }
-
+  // --------------------------------------------------------------------------
+  // İç zamanlama yardımcısı
+  // --------------------------------------------------------------------------
   Future<void> _zonedSchedule(
     int id,
     String title,
     String body,
     tz.TZDateTime scheduledDate, {
-    bool repeating = false,
     DateTimeComponents? matchComponents,
     required String channelId,
   }) async {
@@ -251,10 +227,9 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: matchComponents,
       );
-      debugPrint('Scheduled exact: id=$id date=$scheduledDate');
+      debugPrint('Tam zamanlı bildirim ayarlandı — id=$id tarih=$scheduledDate');
     } catch (e) {
-      debugPrint('Exact schedule failed ($e). Trying inexact fallback');
-      // fallback to inexact
+      debugPrint('Tam zamanlı alarm başarısız ($e). Yaklaşık zamanlıya geçiliyor.');
       await _plugin.zonedSchedule(
         id,
         title,
@@ -264,12 +239,38 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexact,
         matchDateTimeComponents: matchComponents,
       );
-      debugPrint('Scheduled inexact fallback: id=$id date=$scheduledDate');
+      debugPrint('Yaklaşık zamanlı bildirim ayarlandı — id=$id tarih=$scheduledDate');
     }
   }
 
-  /// Günlük tekrarlayan bildirim (sadece saat/dakika eşleşmesi)
-  Future<void> scheduleDaily(TimeOfDay time, String title, {int? id}) async {
+  // --------------------------------------------------------------------------
+  // Herkese açık zamanlama metodları
+  // --------------------------------------------------------------------------
+
+  /// Anlık test bildirimi gönderir.
+  Future<void> showTestNotification() async {
+    await _plugin.show(
+      1,
+      'Test Bildirimi',
+      'Bu bir deneme bildirimi.',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelTestId,
+          'Test Kanalı',
+          channelDescription: 'Test amaçlı bildirimler',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+    );
+  }
+
+  /// Her gün belirtilen saatte tekrarlayan bildirim.
+  Future<void> scheduleDaily(
+    TimeOfDay time,
+    String title, {
+    int? id,
+  }) async {
     final now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduled = tz.TZDateTime(
       tz.local,
@@ -279,24 +280,27 @@ class NotificationService {
       time.hour,
       time.minute,
     );
-    if (scheduled.isBefore(now))
+    if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
+    }
 
     final notificationId = id ?? (time.hour * 100 + time.minute);
-
     await _zonedSchedule(
       notificationId,
       title,
       'Günlük hatırlatmanız var',
       scheduled,
-      repeating: true,
       matchComponents: DateTimeComponents.time,
       channelId: _channelDailyId,
     );
   }
 
-  /// Tek seferlik bildirim (sadece saat/dakika için)
-  Future<void> scheduleOnce(TimeOfDay time, String title, {int? id}) async {
+  /// Bir kez belirtilen saatte bildirim (bugün geçtiyse yarın).
+  Future<void> scheduleOnce(
+    TimeOfDay time,
+    String title, {
+    int? id,
+  }) async {
     final now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduled = tz.TZDateTime(
       tz.local,
@@ -306,22 +310,22 @@ class NotificationService {
       time.hour,
       time.minute,
     );
-    if (scheduled.isBefore(now))
+    if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
+    }
 
-    final notificationId = id ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
+    final notificationId =
+        id ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await _zonedSchedule(
       notificationId,
       title,
       'Hatırlatmanız var',
       scheduled,
-      repeating: false,
       channelId: _channelOnceId,
     );
   }
 
-  /// Belirli tarih ve saatte tek seferlik bildirim
+  /// Belirli bir tarih ve saatte tek seferlik bildirim.
   Future<void> scheduleSpecificDate(
     DateTime dateTime,
     String title, {
@@ -329,106 +333,86 @@ class NotificationService {
   }) async {
     final tz.TZDateTime scheduled = tz.TZDateTime.from(dateTime, tz.local);
     final notificationId = id ?? dateTime.millisecondsSinceEpoch ~/ 1000;
-
     await _zonedSchedule(
       notificationId,
       title,
       'Hatırlatmanız var',
       scheduled,
-      repeating: false,
       channelId: _channelSpecificId,
     );
   }
 
-  // Cancel
-  Future<void> cancel(int id) async => await _plugin.cancel(id);
-  Future<void> cancelAll() async => await _plugin.cancelAll();
+  // --------------------------------------------------------------------------
+  // İptal
+  // --------------------------------------------------------------------------
+  Future<void> cancel(int id) async => _plugin.cancel(id);
+  Future<void> cancelAll()        async => _plugin.cancelAll();
 
   Future<List<PendingNotificationRequest>> getPending() async =>
-      await _plugin.pendingNotificationRequests();
+      _plugin.pendingNotificationRequests();
 }
 
 // ============================================================================
-// GLOBAL WRAPPERS & HELPERS (Backward Compatibility)
+// Global sarmalayıcılar (Geriye dönük uyumluluk)
 // ============================================================================
 
 final _service = NotificationService();
 
-/// Global initializer
+/// Uygulamanın main() içinde çağrılmalı.
 Future<void> initializeNotifications() async {
   await _service.init();
 }
 
-/// Helper method to ensure we have permissions before doing something
+/// Bildirim izinlerini kontrol eder; gerekiyorsa kullanıcıyı ayarlara yönlendirir.
 Future<bool> ensureNotificationPermission(BuildContext context) async {
   final granted = await _service.requestNotificationPermission();
-  if (granted) {
-    // Also check exact alarm permission if on Android
-    if (Platform.isAndroid) {
-      final canExact = await _service.canScheduleExactAlarms();
-      if (!canExact) {
-        // Option: Show dialog or snackbar to user explaining they need to allow exact alarms
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tam zamanlı hatırlatıcılar için izin gerekiyor.'),
-              action: SnackBarAction(
-                label: 'Ayarlar',
-                onPressed: _openAlarmSettings,
-              ),
-            ),
-          );
-        }
-        return false;
-      }
+  if (!granted) return false;
+
+  if (Platform.isAndroid) {
+    final canExact = await _service.canScheduleExactAlarms();
+    if (!canExact && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text('Tam zamanlı hatırlatıcılar için izin gerekiyor.'),
+          action: SnackBarAction(
+            label: 'Ayarlar',
+            onPressed: () => _service.requestExactAlarmPermission(),
+          ),
+        ),
+      );
+      return false;
     }
   }
-  return granted;
+  return true;
 }
 
-void _openAlarmSettings() async {
-  await _service.requestExactAlarmPermission();
-}
-
-/// Wrapper for specific date
 Future<void> scheduleSpecificDateNotification(
-  DateTime date,
-  String title,
-) async {
-  await _service.scheduleSpecificDate(date, title);
-}
+        DateTime date, String title) async =>
+    _service.scheduleSpecificDate(date, title);
 
-/// Wrapper for daily
-Future<void> scheduleDailyNotification(TimeOfDay time, String title) async {
-  await _service.scheduleDaily(time, title);
-}
+Future<void> scheduleDailyNotification(
+        TimeOfDay time, String title) async =>
+    _service.scheduleDaily(time, title);
 
-/// Wrapper for once
-Future<void> scheduleOnceNotification(TimeOfDay time, String title) async {
-  await _service.scheduleOnce(time, title);
-}
+Future<void> scheduleOnceNotification(
+        TimeOfDay time, String title) async =>
+    _service.scheduleOnce(time, title);
 
-/// Wrapper for test
-Future<void> showTestNotification() async {
-  await _service.showTestNotification();
-}
+Future<void> showTestNotification() async =>
+    _service.showTestNotification();
 
-/// Wrapper for pending
-Future<List<PendingNotificationRequest>> getPendingNotifications() async {
-  return _service.getPending();
-}
+Future<List<PendingNotificationRequest>> getPendingNotifications() async =>
+    _service.getPending();
 
-/// Wrapper for cancel
-Future<void> cancelNotification(int id) async {
-  await _service.cancel(id);
-}
+Future<void> cancelNotification(int id) async => _service.cancel(id);
 
-/// Wrapper for cancel all
-Future<void> cancelAllNotifications() async {
-  await _service.cancelAll();
-}
+Future<void> cancelAllNotifications() async => _service.cancelAll();
 
-/// Helper for safe operations with context
+Future<bool> checkExactAlarmPermission() async =>
+    _service.canScheduleExactAlarms();
+
+/// Bildirim işlemlerini try/catch ile güvenli şekilde çalıştırır.
 Future<bool> safeNotificationOperation(
   Future<void> Function() operation,
   BuildContext context,
@@ -437,21 +421,18 @@ Future<bool> safeNotificationOperation(
     await operation();
     return true;
   } catch (e) {
-    debugPrint('Notification operation failed: $e');
+    debugPrint('Bildirim işlemi başarısız: $e');
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
     return false;
   }
 }
 
-Future<bool> checkExactAlarmPermission() async {
-  return _service.canScheduleExactAlarms();
-}
-
-// --- Permission Manager Classes (Restored) ---
+// ============================================================================
+// İzin Yöneticisi
+// ============================================================================
 
 enum NotificationPermissionStatus {
   granted,
@@ -463,7 +444,6 @@ enum NotificationPermissionStatus {
 
 class NotificationPermissionManager {
   static Future<NotificationPermissionStatus> checkPermission() async {
-    // Simple mapping for now
     final granted = await _service.requestNotificationPermission();
     return granted
         ? NotificationPermissionStatus.granted
@@ -478,19 +458,18 @@ class NotificationPermissionManager {
   }
 
   static String getPermissionStatusMessage(
-    NotificationPermissionStatus status,
-  ) {
+      NotificationPermissionStatus status) {
     switch (status) {
       case NotificationPermissionStatus.granted:
         return 'Bildirim izni verildi';
       case NotificationPermissionStatus.denied:
         return 'Bildirim izni reddedildi';
       case NotificationPermissionStatus.permanentlyDenied:
-        return 'Bildirim izni kalıcı olarak reddedildi, ayarlardan açmanız gerekebilir';
+        return 'Bildirim izni kalıcı olarak reddedildi, '
+            'ayarlardan açmanız gerekebilir';
       case NotificationPermissionStatus.restricted:
         return 'Bildirim izni kısıtlı';
       case NotificationPermissionStatus.unknown:
-      default:
         return 'Bilinmeyen durum';
     }
   }

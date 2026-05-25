@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:noteapplication/Model/ScheduleNotification.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
-
 class NotificationDebugPage extends StatefulWidget {
   const NotificationDebugPage({Key? key}) : super(key: key);
 
@@ -27,111 +24,90 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
   Future<void> runDebugChecks() async {
     String info = '';
 
-    // Check exact alarm permission
+    // Exact alarm izni
     try {
-      final canScheduleExactAlarms = await checkExactAlarmPermission();
-      info +=
-          'Exact Alarm Permission: ${canScheduleExactAlarms ? "GRANTED" : "DENIED"}\n';
+      final canExact = await checkExactAlarmPermission();
+      info += 'Exact Alarm Permission: ${canExact ? "GRANTED" : "DENIED"}\n';
     } catch (e) {
       info += 'Exact Alarm Permission Check Error: $e\n';
     }
 
-    // Check notification permission
+    // Bildirim izni
     try {
-      final permissionStatus =
-          await NotificationPermissionManager.checkPermission();
-      info += 'Notification Permission: ${permissionStatus.name}\n';
+      final service = NotificationService();
+      final granted = await service.requestNotificationPermission();
+      info += 'Notification Permission Granted: $granted\n';
     } catch (e) {
       info += 'Notification Permission Check Error: $e\n';
     }
 
-    // Check notification channels
+    // Bekleyen bildirim sayısı (v19'da getNotificationChannels kaldırıldı)
     try {
-      final androidPlugin =
-          flutterLocalNotificationsPlugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >();
-
-      if (androidPlugin != null) {
-        final channels = await androidPlugin.getNotificationChannels();
-        if (channels != null) {
-          info += 'Notification Channels: ${channels.length} found\n';
-          for (var channel in channels) {
-            info += '  - ${channel.id}: ${channel.importance.name}\n';
-          }
-        } else {
-          info += 'Notification Channels: null\n';
-        }
-      }
+      final pending = await getPendingNotifications();
+      info += 'Pending Notifications: ${pending.length} adet\n';
     } catch (e) {
-      info += 'Channel Check Error: $e\n';
+      info += 'Pending Check Error: $e\n';
     }
 
+    if (!mounted) return;
     setState(() {
       debugInfo = info;
     });
   }
 
   Future<void> loadPendingNotifications() async {
-    setState(() {
-      isLoading = true;
-    });
+    if (!mounted) return;
+    setState(() => isLoading = true);
 
     try {
       final notifications = await getPendingNotifications();
+      if (!mounted) return;
       setState(() {
         pendingNotifications = notifications;
         isLoading = false;
       });
     } catch (e) {
-      print('Error loading pending notifications: $e');
-      setState(() {
-        isLoading = false;
-      });
+      debugPrint('Pending notifications yüklenemedi: $e');
+      if (!mounted) return;
+      setState(() => isLoading = false);
     }
   }
 
   Future<void> testImmediateNotification() async {
     try {
       await showTestNotification();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Test notification sent!'),
+          content: Text('Test bildirimi gönderildi!'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
       );
     }
   }
 
   Future<void> scheduleTestNotification() async {
     try {
-      final now = DateTime.now();
-      final scheduledTime = now.add(const Duration(minutes: 1));
+      final scheduledTime = DateTime.now().add(const Duration(minutes: 1));
+      await scheduleSpecificDateNotification(scheduledTime, 'Debug Test Notu');
 
-      await scheduleSpecificDateNotification(scheduledTime, 'Debug Test Note');
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Notification scheduled for: ${scheduledTime.toString()}',
-          ),
+          content: Text('Bildirim ayarlandı: $scheduledTime'),
           backgroundColor: Colors.blue,
         ),
       );
-
-      // Reload pending notifications
       await loadPendingNotifications();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error scheduling: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Zamanlama hatası: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -139,46 +115,43 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
   Future<void> scheduleDailyTest() async {
     try {
       final now = DateTime.now();
-      final testTime = TimeOfDay(hour: now.hour, minute: (now.minute + 1) % 60);
+      final testTime = TimeOfDay(
+        hour: now.hour,
+        minute: (now.minute + 1) % 60,
+      );
+      await scheduleDailyNotification(testTime, 'Günlük Debug Testi');
 
-      await scheduleDailyNotification(testTime, 'Daily Debug Test');
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Daily notification scheduled for: ${testTime.format(context)}',
-          ),
+          content: Text('Günlük bildirim ayarlandı: ${testTime.format(context)}'),
           backgroundColor: Colors.blue,
         ),
       );
-
       await loadPendingNotifications();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error scheduling daily: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Günlük zamanlama hatası: $e'), backgroundColor: Colors.red),
       );
     }
   }
 
-  Future<void> cancelAllNotifications() async {
+  Future<void> cancelAllAndRefresh() async {
     try {
-      await flutterLocalNotificationsPlugin.cancelAll();
+      await cancelAllNotifications();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('All notifications cancelled'),
+          content: Text('Tüm bildirimler iptal edildi'),
           backgroundColor: Colors.orange,
         ),
       );
       await loadPendingNotifications();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error cancelling: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('İptal hatası: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -200,12 +173,12 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Debug Info
+            // Debug bilgileri
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -214,27 +187,20 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                   children: [
                     const Text(
                       'Debug Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      debugInfo.isEmpty ? 'Loading debug info...' : debugInfo,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                      ),
+                      debugInfo.isEmpty ? 'Yükleniyor...' : debugInfo,
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                     ),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
 
-            // Test Buttons
+            // Test butonları
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -243,10 +209,7 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                   children: [
                     const Text(
                       'Test Notifications',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
@@ -254,8 +217,9 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
                       ),
-                      child: const Text('Send Test Notification Now'),
+                      child: const Text('Hemen Bildirim Gönder'),
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
@@ -263,8 +227,9 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
                       ),
-                      child: const Text('Schedule Test (1 min from now)'),
+                      child: const Text('1 Dakika Sonra Bildirim'),
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
@@ -272,26 +237,27 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
                       ),
-                      child: const Text('Schedule Daily Test'),
+                      child: const Text('Günlük Bildirim Test'),
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
-                      onPressed: cancelAllNotifications,
+                      onPressed: cancelAllAndRefresh,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
                       ),
-                      child: const Text('Cancel All Notifications'),
+                      child: const Text('Tüm Bildirimleri İptal Et'),
                     ),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
 
-            // Pending Notifications
+            // Bekleyen bildirimler
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -301,11 +267,8 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                     Row(
                       children: [
                         const Text(
-                          'Pending Notifications',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          'Bekleyen Bildirimler',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 8),
                         if (isLoading)
@@ -319,28 +282,29 @@ class _NotificationDebugPageState extends State<NotificationDebugPage> {
                     const SizedBox(height: 16),
                     if (pendingNotifications.isEmpty)
                       const Text(
-                        'No pending notifications',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                        ),
+                        'Bekleyen bildirim yok',
+                        style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                       )
                     else
-                      ...pendingNotifications.map(
-                        (notification) => ListTile(
-                          leading: const Icon(Icons.notifications),
-                          title: Text(notification.title ?? 'No title'),
-                          subtitle: Text('ID: ${notification.id}'),
-                          trailing: IconButton(
-                            onPressed: () async {
-                              await flutterLocalNotificationsPlugin.cancel(
-                                notification.id,
-                              );
-                              await loadPendingNotifications();
-                            },
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                          ),
-                        ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: pendingNotifications.length,
+                        itemBuilder: (context, index) {
+                          final notification = pendingNotifications[index];
+                          return ListTile(
+                            leading: const Icon(Icons.notifications),
+                            title: Text(notification.title ?? 'Başlık yok'),
+                            subtitle: Text('ID: ${notification.id}'),
+                            trailing: IconButton(
+                              onPressed: () async {
+                                await cancelNotification(notification.id);
+                                await loadPendingNotifications();
+                              },
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                            ),
+                          );
+                        },
                       ),
                   ],
                 ),

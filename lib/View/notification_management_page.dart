@@ -7,10 +7,12 @@ class NotificationManagementPage extends StatefulWidget {
   const NotificationManagementPage({super.key});
 
   @override
-  State<NotificationManagementPage> createState() => _NotificationManagementPageState();
+  State<NotificationManagementPage> createState() =>
+      _NotificationManagementPageState();
 }
 
-class _NotificationManagementPageState extends State<NotificationManagementPage> {
+class _NotificationManagementPageState
+    extends State<NotificationManagementPage> {
   List<PendingNotificationRequest> pendingNotifications = [];
 
   @override
@@ -21,7 +23,6 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
 
   Future<void> loadPendingNotifications() async {
     final notifications = await getPendingNotifications();
-    // Check if widget is still mounted before updating state
     if (!mounted) return;
     setState(() {
       pendingNotifications = notifications;
@@ -31,24 +32,27 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-             appBar: AppBar(
-         title: const Text('Bildirim Yönetimi', style: TextStyle(color: Colors.white)),
-         backgroundColor: Colors.transparent,
-         elevation: 0,
-         actions: [
-           IconButton(
-             onPressed: () {
-               Navigator.of(context).push(
-                 MaterialPageRoute(
-                   builder: (context) => const PermissionManagementPage(),
-                 ),
-               );
-             },
-             icon: const Icon(Icons.security, color: Colors.white70),
-             tooltip: 'İzin Yönetimi',
-           ),
-         ],
-       ),
+      appBar: AppBar(
+        title: const Text(
+          'Bildirim Yönetimi',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const PermissionManagementPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.security, color: Colors.white70),
+            tooltip: 'İzin Yönetimi',
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -63,23 +67,23 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
               ),
             ),
             const SizedBox(height: 16),
-            
-                         // Test bildirimi butonu
-             ElevatedButton.icon(
-               onPressed: () async {
-                 final success = await safeNotificationOperation(() async {
-                   await showTestNotification();
-                 }, context);
-                 
-                 if (success && mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                     const SnackBar(
-                       content: Text('Test bildirimi gönderildi'),
-                       backgroundColor: Colors.green,
-                     ),
-                   );
-                 }
-               },
+
+            // Test bildirimi
+            ElevatedButton.icon(
+              onPressed: () async {
+                final success = await safeNotificationOperation(
+                  () async => showTestNotification(),
+                  context,
+                );
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test bildirimi gönderildi'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
               icon: const Icon(Icons.notification_add),
               label: const Text('Test Bildirimi Gönder'),
               style: ElevatedButton.styleFrom(
@@ -88,32 +92,31 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                 minimumSize: const Size(double.infinity, 50),
               ),
             ),
-            
             const SizedBox(height: 16),
-            
+
             // Hızlı bildirim butonları
             Row(
               children: [
                 Expanded(
-                                     child: ElevatedButton.icon(
-                     onPressed: () async {
-                       final success = await safeNotificationOperation(() async {
-                         await scheduleOnceNotification(
-                           const TimeOfDay(hour: 14, minute: 30),
-                           'Test Notu',
-                         );
-                       }, context);
-                       
-                       if (success && mounted) {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(
-                             content: Text('Yarın 14:30\'da bildirim ayarlandı'),
-                             backgroundColor: Colors.green,
-                           ),
-                         );
-                         loadPendingNotifications();
-                       }
-                     },
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final success = await safeNotificationOperation(
+                        () async => scheduleOnceNotification(
+                          const TimeOfDay(hour: 14, minute: 30),
+                          'Test Notu',
+                        ),
+                        context,
+                      );
+                      if (success && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("14:30'da bildirim ayarlandı"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        loadPendingNotifications();
+                      }
+                    },
                     icon: const Icon(Icons.schedule),
                     label: const Text('Yarın 14:30'),
                     style: ElevatedButton.styleFrom(
@@ -124,25 +127,25 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                                     child: ElevatedButton.icon(
-                     onPressed: () async {
-                       final success = await safeNotificationOperation(() async {
-                         await scheduleDailyNotification(
-                           const TimeOfDay(hour: 9, minute: 0),
-                           'Günlük Hatırlatma',
-                         );
-                       }, context);
-                       
-                       if (success && mounted) {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(
-                             content: Text('Her gün 09:00\'da bildirim ayarlandı'),
-                             backgroundColor: Colors.green,
-                           ),
-                         );
-                         loadPendingNotifications();
-                       }
-                     },
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final success = await safeNotificationOperation(
+                        () async => scheduleDailyNotification(
+                          const TimeOfDay(hour: 9, minute: 0),
+                          'Günlük Hatırlatma',
+                        ),
+                        context,
+                      );
+                      if (success && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Her gün 09:00'da bildirim ayarlandı"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        loadPendingNotifications();
+                      }
+                    },
                     icon: const Icon(Icons.repeat),
                     label: const Text('Her gün 09:00'),
                     style: ElevatedButton.styleFrom(
@@ -153,10 +156,9 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                 ),
               ],
             ),
-            
             const SizedBox(height: 24),
-            
-            // Bekleyen bildirimler
+
+            // Bekleyen bildirimler başlığı
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -171,13 +173,16 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                 TextButton.icon(
                   onPressed: loadPendingNotifications,
                   icon: const Icon(Icons.refresh, color: Colors.white70),
-                  label: const Text('Yenile', style: TextStyle(color: Colors.white70)),
+                  label: const Text(
+                    'Yenile',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
-            
             const SizedBox(height: 8),
-            
+
+            // Bekleyen bildirimler listesi
             Expanded(
               child: pendingNotifications.isEmpty
                   ? const Center(
@@ -193,7 +198,10 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                         return Card(
                           color: Colors.blueGrey.shade800,
                           child: ListTile(
-                                                         leading: const Icon(Icons.notifications, color: Colors.orange),
+                            leading: const Icon(
+                              Icons.notifications,
+                              color: Colors.orange,
+                            ),
                             title: Text(
                               notification.title ?? 'Bilinmeyen',
                               style: const TextStyle(color: Colors.white),
@@ -206,7 +214,7 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () async {
                                 await cancelNotification(notification.id);
-                                loadPendingNotifications();
+                                await loadPendingNotifications();
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -221,14 +229,13 @@ class _NotificationManagementPageState extends State<NotificationManagementPage>
                       },
                     ),
             ),
-            
             const SizedBox(height: 16),
-            
+
             // Tüm bildirimleri iptal et
             ElevatedButton.icon(
               onPressed: () async {
                 await cancelAllNotifications();
-                loadPendingNotifications();
+                await loadPendingNotifications();
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

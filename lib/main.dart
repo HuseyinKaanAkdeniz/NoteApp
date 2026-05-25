@@ -8,11 +8,13 @@ void main() async {
   runApp(const MainApp());
 }
 
+ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MainApp extends StatelessWidget {
   static String title = 'Notes SQLite';
 
   const MainApp({super.key});
-
+ 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
